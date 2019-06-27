@@ -1,0 +1,467 @@
+#include<SoftwareSerial.h>
+#include <Servo.h>  /* Servo kutuphanesi projeye dahil edildi */
+Servo myservo;  /* servo motor nesnesi yaratildi */
+
+int oku; int ENA = 2; int ENB =3;
+
+ int IN1A = 4 ;
+ int IN2A = 5 ;
+ int IN1B = 6 ;
+ int IN2B = 7 ;
+ char deger;
+
+int asama = -1;
+
+int ontrigPin = 12; /* Sensorun trig pini Arduinonun 12 numaralı ayağına bağlandı */
+int onechoPin = 13;  /* Sensorun echo pini Arduinonun 13 numaralı ayağına bağlandı */
+long onsure;
+long onuzaklik;
+
+int onsagtrigPin = 11; /* Sensorun trig pini Arduinonun 9 numaralı ayağına bağlandı */
+int onsagechoPin = 10;  /* Sensorun echo pini Arduinonun 8 numaralı ayağına bağlandı */
+long onsagsure;
+long onsaguzaklik;
+
+int onsoltrigPin = 9; /* Sensorun trig pini Arduinonun 6 numaralı ayağına bağlandı */
+int onsolechoPin = 8;  /* Sensorun echo pini Arduinonun 7 numaralı ayağına bağlandı */
+long onsolsure;
+long onsoluzaklik;
+
+
+int arkatrigPin = 22; /* Sensorun trig pini Arduinonun 6 numaralı ayağına bağlandı */
+int arkaechoPin = 24;  /* Sensorun echo pini Arduinonun 7 numaralı ayağına bağlandı */
+long arkasure;
+long arkauzaklik;
+
+
+int arkasoltrigPin = 26; /* Sensorun trig pini Arduinonun 6 numaralı ayağına bağlandı */
+int arkasolechoPin = 28;  /* Sensorun echo pini Arduinonun 7 numaralı ayağına bağlandı */
+long arkasolsure;
+long arkasoluzaklik;
+
+
+int arkasagtrigPin = 30; /* Sensorun trig pini Arduinonun 6 numaralı ayağına bağlandı */
+int arkasagechoPin = 32;  /* Sensorun echo pini Arduinonun 7 numaralı ayağına bağlandı */
+long arkasagsure;
+long arkasaguzaklik;
+
+void setup() {
+myservo.attach(23);  /* Servo motor 23 numarali pine baglandi */
+Serial.begin(9600); 
+
+pinMode(ENA,OUTPUT); 
+
+pinMode(IN1A,OUTPUT); 
+
+pinMode(IN2A,OUTPUT); 
+
+pinMode(ENB,OUTPUT);
+
+pinMode(IN1B,OUTPUT);
+
+pinMode(IN2B,OUTPUT);
+
+pinMode(ontrigPin, OUTPUT); /* trig pini çıkış olarak ayarlandı */
+pinMode(onechoPin,INPUT); /* echo pini giriş olarak ayarlandı */
+
+pinMode(onsagtrigPin, OUTPUT); /* trig pini çıkış olarak ayarlandı */
+pinMode(onsagechoPin,INPUT); /* echo pini giriş olarak ayarlandı */
+
+pinMode(onsoltrigPin, OUTPUT); /* trig pini çıkış olarak ayarlandı */
+pinMode(onsolechoPin,INPUT); /* echo pini giriş olarak ayarlandı */
+
+pinMode(arkatrigPin, OUTPUT); /* trig pini çıkış olarak ayarlandı */
+pinMode(arkaechoPin,INPUT); /* echo pini giriş olarak ayarlandı */
+
+pinMode(arkasoltrigPin, OUTPUT); /* trig pini çıkış olarak ayarlandı */
+pinMode(arkasolechoPin,INPUT); /* echo pini giriş olarak ayarlandı */
+
+pinMode(arkasagtrigPin, OUTPUT); /* trig pini çıkış olarak ayarlandı */
+pinMode(arkasagechoPin,INPUT); /* echo pini giriş olarak ayarlandı */
+}
+
+void motorSola() {   // motor sola döndürme
+myservo.write(97);
+delay(100);
+}
+void motorSaga() {  // motor saga döndürme
+myservo.write(55);
+delay(100);
+}
+void motorduz() {   // motor düzleme
+myservo.write(75);
+delayMicroseconds(550);
+}
+
+void motorGeri(){
+analogWrite(ENA,65);
+analogWrite(ENB,65);
+digitalWrite(IN1A,LOW);
+digitalWrite(IN2A,HIGH); 
+digitalWrite(IN1B,LOW);
+digitalWrite(IN2B,HIGH);
+}
+void motorIleri(){  // motoru ileri hareket ettirme 
+analogWrite(ENA,65);
+analogWrite(ENB,65);
+digitalWrite(IN1A,HIGH);
+digitalWrite(IN2A,LOW); 
+digitalWrite(IN1B,HIGH);
+digitalWrite(IN2B,LOW);
+}
+void motorDur(){  // motoru durdurma 
+analogWrite(ENA,0);
+analogWrite(ENB,0);
+digitalWrite(IN1A,LOW);
+digitalWrite(IN2A,LOW); 
+digitalWrite(IN1B,LOW);
+digitalWrite(IN2B,LOW);
+}
+
+void loop() {
+
+  if(asama == -3){
+    delay(1500);
+    asama = 1;
+    }
+
+  if(asama == -2){
+    //Serial.println("Asama -2 Bitiş");
+    mesafeler();
+   } //ARAÇ TAMAMEN DURSUN.
+  
+  //ASAMA == -1 ARAÇ İLK HAREKETSİZ KALSIN.
+  if(asama == -1){
+    motorduz();
+    while (Serial.available() > 0 ){ 
+     oku = Serial.read();
+    //Serial.println(char(oku));
+  
+    }
+    if(char(oku)=='1') //Başla komutu
+    { 
+      asama = 1;
+    }
+  }
+
+  //ASAMA == 1 ARAÇ İLERİ GİDER VE PARK YERİ ARAR.
+  if(asama == 1){
+  //Serial.println("Asama 1");  
+  digitalWrite(onsagtrigPin, LOW); /* sensör pasif hale getirildi */
+  delayMicroseconds(5);
+  digitalWrite(onsagtrigPin, HIGH); /* Sensore ses dalgasının üretmesi için emir verildi */
+  delayMicroseconds(10);
+  digitalWrite(onsagtrigPin, LOW);  /* Yeni dalgaların üretilmemesi için trig pini LOW konumuna getirildi */ 
+  onsagsure = pulseIn(onsagechoPin, HIGH); /* ses dalgasının geri dönmesi için geçen sure ölçülüyor */
+  onsaguzaklik= onsagsure /29.1/2; /* ölçülen sure uzaklığa çevriliyor */ 
+  delay(5); //ARA
+  digitalWrite(ontrigPin, LOW); /* sensör pasif hale getirildi */
+  delayMicroseconds(5);
+  digitalWrite(ontrigPin, HIGH); /* Sensore ses dalgasının üretmesi için emir verildi */
+  delayMicroseconds(10);
+  digitalWrite(ontrigPin, LOW);  /* Yeni dalgaların üretilmemesi için trig pini LOW konumuna getirildi */ 
+  onsure = pulseIn(onechoPin, HIGH); /* ses dalgasının geri dönmesi için geçen sure ölçülüyor */
+  onuzaklik= onsure /29.1/2; /* ölçülen sure uzaklığa çevriliyor */ 
+
+  if(onuzaklik <= 10){
+
+    motorDur();
+    delay(100);
+    Serial.print("hata"); 
+    Serial.print(",");
+    Serial.print("kod5");
+    Serial.print(",");
+    Serial.println("");  
+    delay(100);
+    asama = -1;
+  }else{
+  
+  delay(90);           
+  if(onsaguzaklik > 15){
+   motorDur();
+
+  if(onsaguzaklik > 35 and onsaguzaklik <75){
+  Serial.print("park"); 
+  Serial.print(",");
+  Serial.print("dikey");
+  Serial.print(",");
+  Serial.println("");
+  }else if(onsaguzaklik > 15 and onsaguzaklik <35){
+  Serial.print("park"); 
+  Serial.print(",");
+  Serial.print("yatay");
+  Serial.print(",");
+  Serial.println("");
+  }else{
+  Serial.print("hata"); 
+  Serial.print(",");
+  Serial.print("kod1");
+  Serial.print(",");
+  Serial.println("");
+  }
+  //asama = 3;
+  asama = 2;
+  
+  }else{
+    motorduz();
+    motorIleri();
+  }
+  }
+  }
+
+  if(asama == 2){ // GELEN PARK DURUMUNA GÖRE ARACI YÖNLENDİRME
+    while (Serial.available() > 0 ){ 
+     oku = Serial.read();
+    //Serial.println(char(oku));
+  
+    if(char(oku)=='2'){  // YATAY PARK ET
+      asama = 3;
+    }else if(char(oku)=='3'){ // DİKEY PARK ET
+      asama = 4;
+    }else if(char(oku)=='4'){ // PARK ETME
+      motorduz();
+      delay(100);
+      motorIleri();
+      delay(1300);
+      motorDur();
+      asama = 1;
+    }else if(char(oku)=='\0'){
+    
+    }else{ // HATA VER
+    //Serial.print("hata"); 
+    //Serial.print(",");
+    //Serial.print("kod2");
+    //Serial.print(",");
+    //Serial.println("");
+    }
+  }
+  }
+  
+  if(asama == 3){ // YATAY PARK AŞAMASI
+  //Serial.println("Asama 3"); 
+  mesafeler(); 
+  motorDur();
+  delay(100);
+
+  motorduz(); //durum1
+  motorIleri();
+  delay(1000);
+  motorDur();
+  delay(100);
+  mesafeler();
+  
+  motorSaga(); //durum 2
+  motorGeri();
+  delay(750);
+  motorDur();
+  delay(100);
+  mesafeler();
+  
+  motorSola();//durum 3
+  motorIleri();
+  delay(1000);
+  motorDur();
+  delay(100);
+  mesafeler();
+
+  motorSaga();//durum 4
+  motorGeri();
+  delay(500);
+  motorDur();
+  delay(100);
+  mesafeler();
+
+  motorSola();//durum 5
+  motorGeri();
+  delay(1000);
+  motorDur();
+  delay(100);
+  mesafeler();
+
+  motorSaga();//durum 6
+  motorIleri();
+  delay(350);
+  motorDur();
+  delay(100);
+  mesafeler();
+
+  motorSola();//durum 7
+  motorGeri();
+  delay(500);
+  motorDur();
+  delay(100);
+  mesafeler();
+
+  motorSaga();//durum 8
+  motorIleri();
+  delay(350);
+  motorDur();
+  delay(100);
+  mesafeler();
+
+  motorduz();//durum 9
+
+  asama = -1;
+  }
+
+  if(asama == 4){ // DİKEY PARK AŞAMASI
+  //Serial.println("Asama 4");  
+  mesafeler();
+
+  motorSola(); //durum 1
+  motorDur();
+  delay(300);
+  mesafeler();
+  
+  motorIleri(); //durum 2
+  delay(750);
+  motorDur();
+  mesafeler();
+ 
+  motorSaga(); //durum 3
+  motorDur();
+  delay(300);
+  mesafeler();
+  
+  motorGeri(); //durum 4
+  delay(600);
+  motorDur();
+  mesafeler();
+
+  motorSola(); //durum 5
+  motorDur();
+  delay(300);
+  mesafeler();
+  
+  motorIleri(); //durum 6
+  delay(650);
+  motorDur();
+  mesafeler();
+ 
+  motorSaga(); //durum 7
+  motorDur();
+  delay(300);
+  mesafeler();
+  
+  motorGeri(); //durum 8
+  delay(1000);
+  motorDur();
+  mesafeler();
+  
+  motorduz(); //durum 9
+  delay(300);
+  mesafeler();
+  
+  motorGeri(); //durum 10
+  delay(700);
+  motorDur();
+  mesafeler();
+  
+  motorduz(); //durum 11
+  motorDur();
+  mesafeler();
+  
+  asama = 5;
+  }
+
+  if(asama == 5){ // DİKEY PARKTA SON DURUM
+  //Serial.println("Asama 5");
+  digitalWrite(arkatrigPin, LOW); /* sensör pasif hale getirildi */
+  delayMicroseconds(5);
+  digitalWrite(arkatrigPin, HIGH); /* Sensore ses dalgasının üretmesi için emir verildi */
+  delayMicroseconds(10);
+  digitalWrite(arkatrigPin, LOW);  /* Yeni dalgaların üretilmemesi için trig pini LOW konumuna getirildi */ 
+  arkasure = pulseIn(arkaechoPin, HIGH); /* ses dalgasının geri dönmesi için geçen sure ölçülüyor */
+  arkauzaklik= arkasure /29.1/2; /* ölçülen sure uzaklığa çevriliyor */            
+  Serial.print("arkaUzaklik ");  
+  Serial.print(arkauzaklik); /* hesaplanan uzaklık bilgisayara aktarılıyor */
+  Serial.println(" CM olarak olculmustur.");  
+
+  if(arkauzaklik > 10){
+    motorGeri();
+  }else{
+    motorDur();
+    asama = -1;
+  }
+  }
+  
+  }//loop bitiş
+  
+
+  void mesafeler(){
+  digitalWrite(ontrigPin, LOW); /* sensör pasif hale getirildi */
+  delayMicroseconds(5);
+  digitalWrite(ontrigPin, HIGH); /* Sensore ses dalgasının üretmesi için emir verildi */
+  delayMicroseconds(10);
+  digitalWrite(ontrigPin, LOW);  /* Yeni dalgaların üretilmemesi için trig pini LOW konumuna getirildi */ 
+  onsure = pulseIn(onechoPin, HIGH); /* ses dalgasının geri dönmesi için geçen sure ölçülüyor */
+  onuzaklik= onsure /29.1/2; /* ölçülen sure uzaklığa çevriliyor */            
+  delay(5); //ARA
+  digitalWrite(onsagtrigPin, LOW); /* sensör pasif hale getirildi */
+  delayMicroseconds(5);
+  digitalWrite(onsagtrigPin, HIGH); /* Sensore ses dalgasının üretmesi için emir verildi */
+  delayMicroseconds(10);
+  digitalWrite(onsagtrigPin, LOW);  /* Yeni dalgaların üretilmemesi için trig pini LOW konumuna getirildi */ 
+  onsagsure = pulseIn(onsagechoPin, HIGH); /* ses dalgasının geri dönmesi için geçen sure ölçülüyor */
+  onsaguzaklik= onsagsure /29.1/2; /* ölçülen sure uzaklığa çevriliyor */            
+  delay(5); //ARA
+  digitalWrite(onsoltrigPin, LOW); /* sensör pasif hale getirildi */
+  delayMicroseconds(5);
+  digitalWrite(onsoltrigPin, HIGH); /* Sensore ses dalgasının üretmesi için emir verildi */
+  delayMicroseconds(10);
+  digitalWrite(onsoltrigPin, LOW);  /* Yeni dalgaların üretilmemesi için trig pini LOW konumuna getirildi */ 
+  onsolsure = pulseIn(onsolechoPin, HIGH); /* ses dalgasının geri dönmesi için geçen sure ölçülüyor */
+  onsoluzaklik= onsolsure /29.1/2; /* ölçülen sure uzaklığa çevriliyor */            
+  delay(5); //ARA
+  digitalWrite(arkatrigPin, LOW); /* sensör pasif hale getirildi */
+  delayMicroseconds(5);
+  digitalWrite(arkatrigPin, HIGH); /* Sensore ses dalgasının üretmesi için emir verildi */
+  delayMicroseconds(10);
+  digitalWrite(arkatrigPin, LOW);  /* Yeni dalgaların üretilmemesi için trig pini LOW konumuna getirildi */ 
+  arkasure = pulseIn(arkaechoPin, HIGH); /* ses dalgasının geri dönmesi için geçen sure ölçülüyor */
+  arkauzaklik= arkasure /29.1/2; /* ölçülen sure uzaklığa çevriliyor */            
+  delay(5); //ARA
+  digitalWrite(arkasagtrigPin, LOW); /* sensör pasif hale getirildi */
+  delayMicroseconds(5);
+  digitalWrite(arkasagtrigPin, HIGH); /* Sensore ses dalgasının üretmesi için emir verildi */
+  delayMicroseconds(10);
+  digitalWrite(arkasagtrigPin, LOW);  /* Yeni dalgaların üretilmemesi için trig pini LOW konumuna getirildi */ 
+  arkasagsure = pulseIn(arkasagechoPin, HIGH); /* ses dalgasının geri dönmesi için geçen sure ölçülüyor */
+  arkasaguzaklik= arkasagsure /29.1/2; /* ölçülen sure uzaklığa çevriliyor */            
+  delay(5); //ARA
+  digitalWrite(arkasoltrigPin, LOW); /* sensör pasif hale getirildi */
+  delayMicroseconds(5);
+  digitalWrite(arkasoltrigPin, HIGH); /* Sensore ses dalgasının üretmesi için emir verildi */
+  delayMicroseconds(10);
+  digitalWrite(arkasoltrigPin, LOW);  /* Yeni dalgaların üretilmemesi için trig pini LOW konumuna getirildi */ 
+  arkasolsure = pulseIn(arkasolechoPin, HIGH); /* ses dalgasının geri dönmesi için geçen sure ölçülüyor */
+  arkasoluzaklik= arkasolsure /29.1/2; /* ölçülen sure uzaklığa çevriliyor */  
+  if(onuzaklik > 100){onuzaklik = 100;}
+  if(onsaguzaklik > 100){onsaguzaklik = 100;}
+  if(onsoluzaklik > 100){onsoluzaklik = 100;}
+  if(arkauzaklik > 100){arkauzaklik = 100;}
+  if(arkasaguzaklik > 100){arkasaguzaklik = 100;}
+  if(arkasoluzaklik > 100){arkasoluzaklik = 100;}
+  delay(5); //ARA
+  Serial.print("mesafe");
+  Serial.print(",");
+  Serial.print(onuzaklik);
+  Serial.print(",");
+  Serial.print(onsaguzaklik);
+  Serial.print(",");
+  Serial.print(onsoluzaklik);
+  Serial.print(",");
+  Serial.print(arkauzaklik);
+  Serial.print(",");
+  Serial.print(arkasaguzaklik);
+  Serial.print(",");
+  Serial.print(arkasoluzaklik);
+  Serial.print(",");
+  Serial.println("");
+  delay(10);
+  }
+
+ void hata(){
+
+ 
+ }
